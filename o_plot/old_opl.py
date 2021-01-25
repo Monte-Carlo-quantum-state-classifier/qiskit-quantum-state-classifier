@@ -75,7 +75,7 @@ def plot_curves(data,curve_set, tit_0, tit_its=[], lab_its=[],
     plt.show()
     return
 
-def plot_scatter(df, xdata, title, ydata = "log_shots",
+def plot_scatter(df, xdata, title,
             left_xlimit = 0.0, right_xlimit = 1.05,
             bottom_ylimit = 0.0, top_ylimit = 100,
             color_name = "tab10"):
@@ -89,7 +89,7 @@ def plot_scatter(df, xdata, title, ydata = "log_shots",
     for index in df.index:        
         offset = 0.0
         x = df[xdata][index]
-        y = df[ydata][index]
+        y = df['log_shots'][index]
 
         c=None        
         if df['device'][index] == "ideal_device":
@@ -101,7 +101,7 @@ def plot_scatter(df, xdata, title, ydata = "log_shots",
             #offset += 0.5*shots_list.count(y)*(-1)**y
         
         plt.scatter(x,y+offset,
-                    label = df.device[index]+", "+ ydata+"="+str(round(y,3)),
+                    label = df.device[index]+", log_shots="+str(round(y,3)),
                     s=100, c=c)
         shots_list.append(y)
         x_list.append(x)
@@ -113,7 +113,7 @@ def plot_scatter(df, xdata, title, ydata = "log_shots",
         plt.xticks([8,16,32])
         
     x = df[xdata].values.tolist()
-    y = df[ydata].values.tolist()
+    y = df['log_shots'].values.tolist()
     
     gradient, intercept, r_value, p_value, std_err = linregress(x[start_index:],y[start_index:])
     mn=np.min(x)
@@ -123,7 +123,7 @@ def plot_scatter(df, xdata, title, ydata = "log_shots",
     comment = "r="+str(round(r_value,3))+"  p="+str(round(p_value,5))
     plt.plot(x1,y1,'k--',label=comment)
 
-    plt.ylabel(ydata)
+    plt.ylabel("$\ln \; n_s$")
     plt.xlabel(xdata)
     plt.title(title)
     plt.legend() 
