@@ -58,3 +58,34 @@ def provide_error_curve(PD_model, PD_test, trials=100, window=9,
             if  safe_rate <= epsilon:
                 break
     return curve, safe_rate, errors
+
+def provide_error_curve_new(PD_model, PD_test, trials=100, window=9,
+                        epsilon = .0001, max_shots = 500,
+                        pol=3, verbosality = -1, metric='jensenshannon'):
+
+    def get_shots(shots, trials):
+        en = get_errors(trials, shots, PD_model, PD_test, metric)
+        error_rate = np.mean(en)/trials
+        return error_rate, en
+
+    # safe factor is to determine when to start the window
+    safe_factor = 2
+    for shots in range(window, max_shots, window):
+        error_rate, _ = get_shots(shots=shots, trials=100)
+        if error_rate < (epsilon*safe_factor):
+            break
+
+    errors = [[0 for i in range(len(PD_model))] for i in range(shots-window-1)]
+    print(len(errors))
+    curve = [0 for i in range(shots+window+1)]
+
+    flag=0
+    for i in range(shots-window, shots+window+1):
+        error_rate, en = get_shots(shots=i, trials=trials)
+        curve[i] = error_rate
+        errors.append(en)
+        if flag==0 and error_rate < epsilon:
+            flag=1
+            safe_rate=error_rate
+
+    return curve, safe_rate, errors
