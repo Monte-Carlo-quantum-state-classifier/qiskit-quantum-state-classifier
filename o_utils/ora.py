@@ -58,3 +58,55 @@ def provide_error_curve(PD_model, PD_test, trials=100, window=9,
             if  safe_rate <= epsilon:
                 break
     return curve, safe_rate, errors
+
+def provide_error_curve_new(PD_model, PD_test, trials=100, window=9,
+                        epsilon = .0001, max_shots = 500,
+                        pol=3, verbosality = -1, metric='jensenshannon'):
+
+    def get_shots(shots, trials):
+        en = get_errors(trials, shots, PD_model, PD_test, metric)
+        error_rate = np.mean(en)/trials
+        return error_rate, en
+
+    # scan shots at each `window` interval 
+    safe_factor = 1 # safe factor scales the stoppong criteria
+    for shots in range(window, max_shots, window):
+        error_rate, _ = get_shots(shots=shots, trials=100)
+        if error_rate <= (epsilon/safe_factor):
+            break
+
+    errors = [[0 for i in range(len(PD_model))] for i in range(shots-window-1)]
+    curve = [0 for i in range(shots-window-1)]
+
+    tail = np.zeros((2*window+1, len(PD_model)))
+
+    counter = 0
+    # construct a tail curve that is double the size of window
+    for i in range(shots-window, shots+window+1):
+        error_rate, en = get_shots(shots=i, trials=trials)
+        curve.append(error_rate)
+        errors.append(en)
+        tail[counter] = en
+        counter += 1
+
+    last_shots = i+1
+    safe_rate = np.max(tail[int(window*1.5),:])/trials
+
+    # if safe_rate is still not in the desired range:
+    # get results for more shots
+    while safe_rate > epsilon:
+        # get errors
+        error_rate, en = get_shots(shots=last_shots, trials=trials)
+        last_shots += 1
+        curve.append(error_rate)
+        errors.append(en)
+        # remove the oldest item of the tail and append the new errors
+        tail = np.append(np.delete(tail, 0, 0), np.expand_dims(en,axis=0), axis=0)
+        # safe rate is the maximum error of the tail
+        safe_rate = np.max(tail[int(window*1.5),:])/trials
+
+    return curve, safe_rate, errors
+
+
+
+
